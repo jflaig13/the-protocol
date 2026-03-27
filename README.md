@@ -187,4 +187,4 @@ CC-BY-SA 4.0 — use it, fork it, make it yours. Attribution required. Derivativ
 
 **Note:** "CC" stands for Claude Code. The CC Suite™ includes a Claude Code implementation (`.claude/` directory). The governance concepts are platform-agnostic and work with any AI coding tool that supports file-based configuration.
 
-*Your CC Suite Learns.*
+*Your agents fail. Your CC Suite learns.*
