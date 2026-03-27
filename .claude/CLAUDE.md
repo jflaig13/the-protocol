@@ -39,7 +39,7 @@ If replacing a terminated predecessor, also read:
 ## Tandem Mode
 
 If operating in tandem with another agent:
-1. Read `governance/handoffs/TANDEM_BOARD.md` (or your active board)
+1. Read your active tandem board (created from `governance/handoffs/TANDEM_BOARD_TEMPLATE.md`)
 2. Follow the V-Loop protocol in `governance/TANDEM_PROTOCOL.md`
 3. Update your STATUS section on the board
 4. Never verify your own work — the other agent does that

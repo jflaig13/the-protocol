@@ -53,12 +53,12 @@ Neither agent could close this ticket alone. The Builder wrote the fix. The Revi
 ```
 | # | Date       | Type | Old/New | Description                              | Issued By |
 |---|------------|------|---------|------------------------------------------|-----------|
-| 1 | 2026-02-01 | A    | NEW     | Fabricated API response format without   | Jon       |
+| 1 | 2026-02-01 | A    | NEW     | Fabricated API response format without   | Founder   |
 |   |            |      |         | checking documentation. Stated invented  |           |
 |   |            |      |         | field names with confidence.             |           |
-| 2 | 2026-02-08 | C    | NEW     | Presented billing feature as "tested"    | Jon       |
+| 2 | 2026-02-08 | C    | NEW     | Presented billing feature as "tested"    | Founder   |
 |   |            |      |         | when no tests existed for the new code.  |           |
-| 3 | 2026-02-10 | A    | NEW     | Invented error handling behavior that    | Jon       |
+| 3 | 2026-02-10 | A    | NEW     | Invented error handling behavior that    | Founder   |
 |   |            |      |         | did not match the actual library docs.   |           |
 ```
 
@@ -80,6 +80,8 @@ docs/brain/
 ```
 
 Each file is a timestamped lesson learned from a real failure. They persist across all future sessions and all agents. When a new agent is hired in any role, these brain files are part of the institutional knowledge it operates within.
+
+*Brain files are optional institutional memory. Create a `docs/brain/` directory in your repo if you want timestamped lesson files. They are not required by The Protocol but are recommended for long-running systems.*
 
 ---
 

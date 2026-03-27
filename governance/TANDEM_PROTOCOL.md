@@ -21,7 +21,7 @@ The Builder can never verify its own work. The Reviewer must independently confi
 
 ## The Coordination Board
 
-A shared state file (`handoffs/TANDEM_BOARD.md`) that both agents read before doing anything and update after doing anything.
+A shared state file that both agents read before doing anything and update after doing anything. Create it from `handoffs/TANDEM_BOARD_TEMPLATE.md` when starting a tandem session.
 
 **Sections:**
 - **CURRENT TICKET** — One item at a time. Description, classification, V-Loop step, next action owner.
