@@ -222,8 +222,118 @@ This file contains the CORE rules. Domain-specific knowledge loads on demand —
 
 ---
 
+## 13. CURRENT MODEL BASELINE
+
+Every fleet running on LLMs needs a canonical declaration of which model is currently in production, what changes when the model upgrades, and how the fleet adapts. Without this canon, agents drift across model versions: deprecated API parameters silently fail, new primitives go unused, and hidden cost regressions land without warning.
+
+**Six things every model-baseline canon must declare:**
+
+1. **Model ID + effective date** — the exact API model identifier (not the friendly name) and the cutover date.
+2. **Breaking API changes** — request parameters that now return HTTP 400; assistant-prefill patterns that no longer work; thinking modes that have been removed; deprecated tool schemas.
+3. **New primitives** — new effort levels, new tool types, new context-window sizes, new vision / PDF / memory capabilities, new slash commands.
+4. **Benchmark deltas vs. the previous baseline** — especially regressions. A model that improves on most axes but regresses on one (for example, agentic web-search) needs the regression flagged so agents know not to rely on the weakened capability.
+5. **Hidden cost shifts** — tokenizer changes that re-encode the same text at different token counts; pricing-tier changes; new beta-header costs.
+6. **Binding fleet-wide operating changes** — concrete actions every agent must take after the upgrade (for example: set `/effort` at session start, purge deprecated params from every code path, evaluate the new memory tool for stateful agents).
+
+**Treat each upgrade canon as immutable.** Successor versions get a new file, not in-place edits to the previous one. The previous canon remains valid context for code paths that have not yet migrated.
+
+**Compose with risk classification.** A model upgrade can be Tier S × EDG-3 (fleet-wide breaking changes, financial-system implications) or Tier B × EDG-1 (drop-in compatible, minor benchmark improvement). Classify before adopting.
+
+**Why this is load-bearing.** Model upgrades are the highest-leverage drift class in any LLM-based fleet. A single underspecified upgrade can land deprecated API calls into production code, change real costs by 30%+ without changing per-token pricing, or silently regress a capability the fleet depends on. The canon makes the upgrade an explicit operational event rather than an implicit drift.
+
+Companion file: `governance/MODEL_CAPABILITY_CANON.md` (template).
+
+---
+
+## 14. WRITING STANDARD — EM DASH CANON
+
+AI writing has structural tics that pull output away from brand voice. The most universal one is em-dash overuse. Default AI writing uses em dashes several times more often than skilled human writing because the em dash works for many structural jobs. That is exactly why it should be used sparingly — it is a blunt instrument, and more precise punctuation exists for every job it does.
+
+**Five jobs and their precise substitutes:**
+
+| What the em dash is doing | Use instead |
+|---|---|
+| Introducing or expanding | Colon |
+| Two complete thoughts | Period |
+| True aside or parenthetical | Parentheses |
+| Soft pause or addition | Comma |
+| Related but distinct clauses | Semicolon |
+
+**The test.** Reach for the em dash. Stop. What structural job is this doing, and is there a more precise mark? If yes: use that mark. If no: the em dash earns its place. Cases that pass: rhythmic beats, deliberate punches, pause before payoff.
+
+**Target.** Roughly 10% of default AI em-dash frequency. Not zero — intentional. Every em dash that appears was chosen over a real alternative and won.
+
+**End-of-draft check.** Search every em dash. Read each one aloud. Filler gets replaced. Keepers stay.
+
+**Applies to.** All agent output: chat responses, memos, handoffs, internal documentation, external-facing copy, code comments, commit messages.
+
+**Why a writing canon at all.** Every fleet has a voice. Without explicit writing rules, AI agents default to a uniform "AI voice" that is recognizable, neutral, and on-brand for no one. The em dash rule is the highest-leverage single tic to address. If your fleet has additional voice rules (sentence length, jargon avoidance, salutation conventions, banned vocabulary), declare them in a companion `WRITING_CANON.md` and load via Section 12.
+
+Companion file: `governance/WRITING_CANON.md` (template).
+
+---
+
+## 15. QUALITY CONVERGENCE — ASYMPTOTE PROTOCOL
+
+Every significant deliverable has a quality ceiling. Each additional pass under a fresh lens moves the output closer to that ceiling. In practice, improvements become negligible around pass 5 — the asymptote. Without automation, agents stop after one pass. This protocol makes them run until convergence by default.
+
+**Definitions:**
+
+- A "pass" = one complete scan of the output under one named lens, with a logged delta (what was checked, what changed). No lens, no delta = not a pass.
+- Convergence = one full lens cycle where every lens returns zero changes. That is the asymptote declaration.
+
+**Standard lens sets by task type:**
+
+| Task type | Lens set |
+|---|---|
+| Spec / canon / brain file | Logic → Completeness → Composability → Falsifiability → Edge cases |
+| Code implementation | Correctness → Coverage → Edge cases → Security → Simplicity |
+| Outreach / memo | Voice canon → Accuracy → Clarity → Concision → Tone |
+| Verification | Coverage → Independence → Numerical accuracy → Edge case robustness |
+| 7-wave subatomic audit | Wave 6 meta-audit IS the convergence check; no separate cycle needed |
+
+Lens sets are not exhaustive. Task owners may add lenses; they may not remove them.
+
+**Mechanics:**
+
+1. Identify task type and lens set at the start of the deliverable.
+2. Run Cycle 1. Apply each lens in sequence. After each lens, log the delta. Apply improvements before moving to the next lens.
+3. After completing one full cycle, review the delta log. If any lens produced changes, run Cycle 2.
+4. Repeat until one full cycle completes with zero changes on every lens.
+5. Declare: "Asymptote reached. N cycles, M passes."
+
+**Expo integration.** Asymptote runs AFTER the Expo-equivalent error-fixing loop completes (output is error-free). If Asymptote finds an improvement, return to the error-fixing loop to catch any errors the improvement introduced. Sequence: Expo clean → Asymptote converged → ship.
+
+**Delta log placement.** The convergence declaration ALWAYS appears in the session output to the human authority (always visible). It never lives inside the deliverable itself.
+- Specs and brain files: one-line in the changelog.
+- Code: commit message or PR description.
+- Outreach / memos: appendix in session output, separated from the deliverable.
+- Audits: the audit ledger captures this via the meta-audit wave.
+
+**When to invoke.** Any Tier A+ deliverable, any spec, any brain file, any outreach, any verification pass, any audit output. Also invoked whenever the human authority says "another pass," "polish this," or your fleet's equivalent shorthand.
+
+**Optional external-evaluator integration.** If your runtime provides an external evaluator command (a model separate from the producing agent that decides when work is "done" — for example, Claude Code's `/goal` command introduced in v2.1.139), set the convergence condition at Step 1:
+
+```
+/goal all named lens passes for [task type] return zero changes, or stop after [N] turns
+```
+
+This routes the convergence declaration to the external evaluator rather than the producing agent, closing the self-certification gap the same way Atomic Verification closed self-verification. The agent cannot declare convergence — only the evaluator can. When the runtime evaluator is not available, run more cycles rather than fewer: the absence raises the obligation, not lowers it.
+
+**Why this matters.** Every quality-improvement protocol that depends on the producing agent self-declaring "good enough" inherits the same blind spot — the producing agent is structurally biased toward declaring its own work done. Asymptote uses named lenses to force the agent through specific viewpoints, and the optional external-evaluator integration closes the last self-certification gap by routing the convergence judgment to a separate model.
+
+Companion file: `governance/ASYMPTOTE_PROTOCOL.md` (template).
+
+---
+
 ## Reference Implementation
 
-Mise Inc. runs the reference implementation of CC-Suite™ v2 at `github.com/jflaig13/cc-suite` (framework) and `mise-core/` (Mise's live deployment). The concrete `HARNESS_CORE.md` that inspired this template lives at `mise-core/HARNESS_CORE.md` — 210 lines, ratified 2026-04-08, distills a specific set of Mise-internal documents (VALUES_CORE.md, AGI_STANDARD.md, SEARCH_FIRST.md, AGENT_POLICY.md, CLAUDE.md) and declares six domain loads (payroll, inventory, verification, CC Exec, tandem, company context).
+Mise Inc. runs the reference implementation of CC-Suite™ v2 at `github.com/jflaig13/cc-suite` (framework) and `mise-core/` (Mise's live deployment). The concrete `HARNESS_CORE.md` that inspired this template lives at `mise-core/HARNESS_CORE.md` — currently ~360 lines, originally ratified 2026-04-08, updated continuously with canon additions (most recent: §13 Opus 4.7 baseline, §14 em dash canon, §15 asymptote protocol). It distills a specific set of Mise-internal documents (VALUES_CORE.md, AGI_STANDARD.md, SEARCH_FIRST.md, AGENT_POLICY.md, CLAUDE.md) and declares seven domain loads (payroll, inventory, verification, Missy, CC Exec, tandem, company context, outreach voice).
 
-You should NOT copy Mise's file verbatim — it contains Mise-specific business rules (shift data, Toast API quirks, tipout formulas, restaurant operations). Instead, copy this template, replace the placeholders with your project's specifics, and use Mise's version as a reference for shape and density.
+You should NOT copy Mise's file verbatim. It contains Mise-specific business rules (shift data, Toast API quirks, tipout formulas, restaurant operations) and references Mise-internal brain files. Instead, copy this template, replace the placeholders with your project's specifics, and use Mise's version as a reference for shape and density.
+
+**Versioning convention.** When this file is materially extended (a new top-level section added, an existing section's mechanics changed in a load-bearing way), update the section count in the intro and add a one-line changelog entry below.
+
+**Changelog:**
+- 2026-05-12: Added §13 (Current Model Baseline), §14 (Writing Standard — Em Dash Canon), §15 (Quality Convergence — Asymptote Protocol). Synced from internal CC-Suite v2 canon additions (Opus 4.7 capability canon 2026-04-16, em dash writing canon 2026-04-25, asymptote protocol 2026-04-27 with v1.1 `/goal` integration 2026-05-12).
+- 2026-04-11: Initial Layer D push — sections 1-12 plus Reference Implementation footer.
